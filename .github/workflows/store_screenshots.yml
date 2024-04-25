@@ -1,33 +1,63 @@
-name: store screenshots
+name: StoreScreenshot
 
 on:
-  push
+  push:
+    branches:
+      - main
+  pull_request:
 
-env:
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.daemon=false -Dkotlin.incremental=false"
+permissions: {}
 
 jobs:
-  store_screenshot:
-    runs-on: macos-latest
+  store-screenshot-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read # for clone
+      actions: write # for upload-artifact
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3.9.0
+      - name: Checkout
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # v3.11.0
         with:
-          distribution: 'zulu'
-          java-version: 19
+          distribution: temurin
+          java-version: 17
 
-      - name: Gradle cache
-        uses: gradle/gradle-build-action@v2
+      # Better than caching and/or extensions of actions/setup-java
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@749f47bda3e44aa060e82d7b3ef7e40d953bd629 # v2.4.2
+        with:
+          gradle-version: wrapper
 
-      - name: test
+      - name: record screenshot
+        id: record-test
         run: |
-          # Create screenshots
-          ./gradlew app:recordRoborazziDebug --stacktrace
-
-      # Upload screenshots to GitHub Actions Artifacts
+          # Use --rerun-tasks to disable cache for test task
+          ./gradlew recordRoborazziDebug --stacktrace --rerun-tasks
       - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
         with:
-          name: screenshots
-          path: app/build/outputs/roborazzi
+          name: screenshot
+          path: |
+            **/build/outputs/roborazzi
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: screenshot-reports
+          path: |
+            **/build/reports
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: screenshot-test-results
+          path: |
+            **/build/test-results
           retention-days: 30
