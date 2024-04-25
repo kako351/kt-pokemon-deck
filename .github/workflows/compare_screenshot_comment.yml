@@ -17,6 +17,8 @@ jobs:
 
     timeout-minutes: 2
 
+    needs: test
+
     permissions:
       actions: read # for downloading artifacts
       contents: write # for pushing screenshot-diff to companion branch
