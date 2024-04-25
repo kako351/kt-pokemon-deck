@@ -10,6 +10,7 @@ permissions: {}
 
 jobs:
   compare-screenshot-test:
+    needs: store_screenshot
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
